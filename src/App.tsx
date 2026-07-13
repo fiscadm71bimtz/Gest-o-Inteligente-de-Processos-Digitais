@@ -10,11 +10,10 @@ import {
 } from 'lucide-react';
 import AdminPanel from './components/AdminPanel';
 import UserProcessPanel from './components/UserProcessPanel';
-import IntegrationGuide from './components/IntegrationGuide';
 import { TipoProcesso } from './types';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'user' | 'admin' | 'guide'>('user');
+  const [activeTab, setActiveTab] = useState<'user' | 'admin'>('user');
   const [templates, setTemplates] = useState<TipoProcesso[]>([]);
 
   const handleTemplatesChange = (newTemplates: TipoProcesso[]) => {
@@ -33,7 +32,7 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-extrabold text-slate-950 tracking-tight text-base">ValidaDoc</span>
+                <span className="font-extrabold text-slate-950 tracking-tight text-base">Gestão de Processos</span>
                 <span className="text-[9px] bg-indigo-50 text-indigo-600 font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border border-indigo-100/30">
                   Unificador
                 </span>
@@ -66,17 +65,6 @@ export default function App() {
               <Settings className="w-3.5 h-3.5" />
               <span>Gerenciar Checklists</span>
             </button>
-            <button
-              onClick={() => setActiveTab('guide')}
-              className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-                activeTab === 'guide'
-                  ? 'bg-white text-indigo-600 shadow-[0_2px_8px_-1px_rgba(0,0,0,0.06)] border border-slate-200/20'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/45'
-              }`}
-            >
-              <FileCode className="w-3.5 h-3.5" />
-              <span>Guia Supabase</span>
-            </button>
           </nav>
         </div>
       </header>
@@ -89,16 +77,13 @@ export default function App() {
         {activeTab === 'admin' && (
           <AdminPanel onTemplatesChange={handleTemplatesChange} />
         )}
-        {activeTab === 'guide' && (
-          <IntegrationGuide />
-        )}
       </main>
 
       {/* FOOTER */}
       <footer className="bg-transparent border-t border-slate-200/40 py-6 shrink-0 mt-8">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-400">
           <div className="flex items-center space-x-1.5">
-            <span className="font-bold text-slate-600 tracking-tight">ValidaDoc</span>
+            <span className="font-bold text-slate-600 tracking-tight">Gestão de Processos</span>
             <span>© 2026</span>
             <span>•</span>
             <span>Gestão Inteligente de Documentos</span>
