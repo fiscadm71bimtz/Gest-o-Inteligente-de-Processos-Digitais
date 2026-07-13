@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, FileText, CheckCircle2, ChevronRight, X, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2, FileText, CheckCircle2, ChevronRight, X, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { TipoProcesso, RequisitoDocumento } from '../types';
 import { supabase, isSupabaseConfigured, getLocalData, saveLocalData } from '../supabaseClient';
 
@@ -152,6 +152,20 @@ export default function AdminPanel({ onTemplatesChange }: AdminPanelProps) {
 
   const handleRemoveRequisitoRow = (id: string) => {
     setFormRequisitos(formRequisitos.filter(r => r.id !== id));
+  };
+
+  const handleMoveRequisito = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === formRequisitos.length - 1) return;
+
+    const newRequisitos = [...formRequisitos];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    const temp = newRequisitos[index];
+    newRequisitos[index] = newRequisitos[targetIndex];
+    newRequisitos[targetIndex] = temp;
+    
+    setFormRequisitos(newRequisitos);
   };
 
   const handleRequisitoChange = (id: string, field: keyof RequisitoDocumento, value: any) => {
@@ -366,10 +380,26 @@ export default function AdminPanel({ onTemplatesChange }: AdminPanelProps) {
                   <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                     {formRequisitos.map((req, index) => (
                       <div key={req.id} className="grid grid-cols-12 gap-3 items-center bg-slate-50/60 p-4 rounded-2xl border border-slate-100">
-                        <div className="col-span-1 text-center font-mono text-xs font-extrabold text-slate-400">
-                          #{index + 1}
+                        <div className="col-span-1 flex flex-col items-center justify-center gap-1 font-mono text-xs font-extrabold text-slate-400">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveRequisito(index, 'up')}
+                            disabled={index === 0}
+                            className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 p-0.5 rounded-md hover:bg-indigo-50 transition-all cursor-pointer"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <span>#{index + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveRequisito(index, 'down')}
+                            disabled={index === formRequisitos.length - 1}
+                            className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 p-0.5 rounded-md hover:bg-indigo-50 transition-all cursor-pointer"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <div className="col-span-5">
+                        <div className="col-span-4">
                           <input
                             type="text"
                             required
@@ -388,7 +418,7 @@ export default function AdminPanel({ onTemplatesChange }: AdminPanelProps) {
                             className="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium"
                           />
                         </div>
-                        <div className="col-span-1.5 flex items-center justify-center space-x-1.5">
+                        <div className="col-span-2 flex items-center justify-center space-x-1.5">
                           <input
                             type="checkbox"
                             id={`obrigatorio-${req.id}`}
@@ -397,7 +427,7 @@ export default function AdminPanel({ onTemplatesChange }: AdminPanelProps) {
                             className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
                           />
                           <label htmlFor={`obrigatorio-${req.id}`} className="text-[11px] font-bold text-slate-500 select-none cursor-pointer">
-                            Obriga.
+                            Obrigatório
                           </label>
                         </div>
                         <div className="col-span-1 flex justify-center">
