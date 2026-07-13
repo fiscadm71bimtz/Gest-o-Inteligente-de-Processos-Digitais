@@ -1,0 +1,6 @@
+{
+  "name": "Unificador de Processos",
+  "description": "Sistema de gestão de processos digitais com checklists dinâmicos, uploads de documentos e motor de unificação de PDFs com rubricas e numeração sequencial integrada.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
