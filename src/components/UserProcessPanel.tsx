@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   FileText, UploadCloud, CheckCircle2, AlertCircle, Play, Download, 
-  Trash2, FileDown, Layers, ChevronRight, Stamp, Check, RefreshCw, Eye
+  Trash2, FileDown, Layers, ChevronRight, Stamp, Check, RefreshCw, Eye, Edit2, X
 } from 'lucide-react';
 import { TipoProcesso, Processo, DocumentoAnexo, RubricaConfig } from '../types';
 import { unificarDocumentos } from '../utils/pdfUnifier';
@@ -23,6 +23,11 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [requerenteNome, setRequerenteNome] = useState('');
   const [cpfCnpj, setCpfCnpj] = useState('');
+
+  // Estados de edição de processo
+  const [isEditingProcesso, setIsEditingProcesso] = useState(false);
+  const [editRequerenteNome, setEditRequerenteNome] = useState('');
+  const [editCpfCnpj, setEditCpfCnpj] = useState('');
   
   // Configurações de Rubrica/Chancela
   const [configChancela, setConfigChancela] = useState<RubricaConfig>({
@@ -155,6 +160,35 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
         });
       } catch (err) {
         console.error('Falha de inserção Supabase:', err);
+      }
+    }
+  };
+
+  const handleEditProcessoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeProcesso || !editRequerenteNome.trim()) return;
+
+    const procAtualizado = {
+      ...activeProcesso,
+      requerenteNome: editRequerenteNome,
+      cpfCnpj: editCpfCnpj
+    };
+
+    setActiveProcesso(procAtualizado);
+    const novosProcs = processos.map(p => p.id === activeProcesso.id ? procAtualizado : p);
+    setProcessos(novosProcs);
+    saveLocalData('processos_usuario', novosProcs);
+
+    setIsEditingProcesso(false);
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('processos').update({
+          requerente_nome: editRequerenteNome,
+          cpf_cnpj: editCpfCnpj
+        }).eq('id', activeProcesso.id);
+      } catch (err) {
+        console.error('Erro ao atualizar processo no Supabase:', err);
       }
     }
   };
@@ -498,6 +532,7 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
                     onClick={() => {
                       setActiveProcesso(p);
                       setPdfUnificadoUrl(p.pdfUnificadoUrl || null);
+                      setIsEditingProcesso(false);
                     }}
                     className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex justify-between items-start group/item ${
                       isActive 
@@ -551,19 +586,71 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
               
               {/* Processo Header Card (Bento Big Box) */}
               <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-100 pb-4 gap-2">
-                  <div>
-                    <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-indigo-100/20 inline-block mb-1.5">
-                      Processo Selecionado
-                    </span>
-                    <h2 className="text-lg font-extrabold text-slate-900 leading-tight">
-                      Requerente: {activeProcesso.requerenteNome}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1 font-medium">
-                      Checklist Associado: <span className="font-semibold text-slate-850 underline decoration-indigo-500/30">{activeProcesso.tipoProcessoTitulo}</span>
-                    </p>
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between border-b border-slate-100 pb-4 gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1.5">
+                      <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-indigo-100/20 inline-block">
+                        Processo Selecionado
+                      </span>
+                      {!isEditingProcesso && (
+                        <button 
+                          onClick={() => {
+                            setEditRequerenteNome(activeProcesso.requerenteNome);
+                            setEditCpfCnpj(activeProcesso.cpfCnpj || '');
+                            setIsEditingProcesso(true);
+                          }}
+                          title="Editar informações do processo"
+                          className="text-slate-400 hover:text-indigo-600 transition-colors p-1 rounded-md hover:bg-indigo-50 cursor-pointer"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    {isEditingProcesso ? (
+                      <form onSubmit={handleEditProcessoSubmit} className="space-y-3 mt-2 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <div className="flex-1">
+                            <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">Nome do Requerente</label>
+                            <input 
+                              type="text" 
+                              required
+                              value={editRequerenteNome} 
+                              onChange={e => setEditRequerenteNome(e.target.value)} 
+                              className="w-full text-sm font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            />
+                          </div>
+                          <div className="sm:w-48">
+                            <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">CPF/CNPJ</label>
+                            <input 
+                              type="text" 
+                              value={editCpfCnpj} 
+                              onChange={e => setEditCpfCnpj(e.target.value)} 
+                              className="w-full text-sm font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button type="button" onClick={() => setIsEditingProcesso(false)} className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3.5 py-2 rounded-xl font-bold flex items-center space-x-1.5 transition-all cursor-pointer">
+                            <X className="w-3.5 h-3.5" /> <span>Cancelar</span>
+                          </button>
+                          <button type="submit" className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl font-bold flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer">
+                            <Check className="w-3.5 h-3.5" /> <span>Salvar Alterações</span>
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <h2 className="text-lg font-extrabold text-slate-900 leading-tight">
+                          Requerente: {activeProcesso.requerenteNome}
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1 font-medium">
+                          Checklist Associado: <span className="font-semibold text-slate-850 underline decoration-indigo-500/30">{activeProcesso.tipoProcessoTitulo}</span>
+                          {activeProcesso.cpfCnpj && <span className="ml-2 text-slate-400">• CPF/CNPJ: {activeProcesso.cpfCnpj}</span>}
+                        </p>
+                      </>
+                    )}
                   </div>
-                  <div className="text-left md:text-right flex flex-row md:flex-col gap-2 md:gap-0.5 font-mono text-[9px] text-slate-400 font-semibold bg-slate-50 p-2 rounded-xl md:bg-transparent md:p-0">
+                  <div className="text-left md:text-right flex flex-row md:flex-col gap-2 md:gap-0.5 font-mono text-[9px] text-slate-400 font-semibold bg-slate-50 p-2 rounded-xl md:bg-transparent md:p-0 shrink-0">
                     <span>Criado em: {activeProcesso.dataCriacao}</span>
                     <span className="hidden md:inline">ID: {activeProcesso.id}</span>
                   </div>
