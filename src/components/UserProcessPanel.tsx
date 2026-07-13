@@ -614,7 +614,7 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
 
                       return (
                         <div key={req.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                          <div className="space-y-1 max-w-full md:max-w-[55%]">
+                          <div className="space-y-1 flex-1 pr-4">
                             <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                               <span className="font-bold text-slate-900 text-xs">{req.nome}</span>
                               {req.obrigatorio && (
@@ -630,12 +630,12 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
                           <div className="w-full md:w-auto min-w-[250px] md:max-w-[320px]">
                             {anexo ? (
                               <div className="bg-white p-3 rounded-xl border border-slate-200/80 flex items-center justify-between shadow-sm/5">
-                                <div className="flex items-center space-x-2.5 truncate max-w-[80%]">
+                                <div className="flex items-center space-x-2.5 max-w-[85%]">
                                   <div className="bg-indigo-50 text-indigo-600 p-2 rounded-lg shrink-0">
                                     <FileText className="w-4 h-4" />
                                   </div>
-                                  <div className="truncate">
-                                    <span className="text-xs font-bold text-slate-850 truncate block">{anexo.nomeArquivo}</span>
+                                  <div className="min-w-0 break-all">
+                                    <span className="text-xs font-bold text-slate-850 block">{anexo.nomeArquivo}</span>
                                     <span className="text-[10px] text-slate-400 font-mono font-medium block">
                                       {anexo.extensao.toUpperCase()} • {formatSize(anexo.tamanho)}
                                     </span>
