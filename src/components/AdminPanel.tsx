@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, FileText, CheckCircle2, ChevronRight, X, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Edit2, FileText, CheckCircle2, ChevronRight, X, AlertCircle, ChevronUp, ChevronDown, Copy } from 'lucide-react';
 import { TipoProcesso, RequisitoDocumento } from '../types';
 import { supabase, isSupabaseConfigured, getLocalData, saveLocalData } from '../supabaseClient';
 
@@ -280,6 +280,55 @@ export default function AdminPanel({ onTemplatesChange }: AdminPanelProps) {
     }
   };
 
+  const handleDuplicateTemplate = async (tp: TipoProcesso) => {
+    const newTemplateId = `tp-${Date.now()}`;
+    const duplicatedTemplate: TipoProcesso = {
+      ...tp,
+      id: newTemplateId,
+      titulo: `${tp.titulo} (Cópia)`,
+      dataCriacao: new Date().toLocaleDateString('pt-BR'),
+      requisitos: tp.requisitos.map((r, index) => ({
+        ...r,
+        id: `req-${Date.now()}-${index}`
+      }))
+    };
+
+    const newTemplates = [duplicatedTemplate, ...templates];
+    setTemplates(newTemplates);
+    saveLocalData('tipos_processo_checklist', newTemplates);
+
+    if (dbStatus === 'supabase' && supabase) {
+      try {
+        const payload = {
+          id: newTemplateId,
+          titulo: duplicatedTemplate.titulo,
+          descricao: duplicatedTemplate.descricao,
+          created_at: new Date().toISOString()
+        };
+
+        const { error: tpErr } = await supabase.from('tipos_processo').insert(payload);
+
+        if (!tpErr) {
+          const reqPayload = duplicatedTemplate.requisitos.map(r => ({
+            id: r.id,
+            tipo_processo_id: newTemplateId,
+            nome: r.nome,
+            descricao: r.descricao,
+            obrigatorio: r.obrigatorio,
+            created_at: new Date().toISOString()
+          }));
+
+          const { error: reqErr } = await supabase.from('requisitos_documento').insert(reqPayload);
+          if (reqErr) console.warn('Erro ao inserir requisitos duplicados no Supabase:', reqErr);
+        } else {
+          console.warn('Erro ao inserir TipoProcesso duplicado no Supabase:', tpErr);
+        }
+      } catch (err) {
+        console.error('Falha de rede Supabase:', err);
+      }
+    }
+  };
+
   return (
     <div className="bg-transparent" id="admin-panel-container">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -523,6 +572,13 @@ export default function AdminPanel({ onTemplatesChange }: AdminPanelProps) {
                   title="Excluir Tipo de Processo"
                 >
                   <Trash2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDuplicateTemplate(tp)}
+                  className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-2 rounded-xl transition-all cursor-pointer"
+                  title="Duplicar Tipo de Processo"
+                >
+                  <Copy className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => openEditForm(tp)}
