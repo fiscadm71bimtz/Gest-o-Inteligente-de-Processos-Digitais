@@ -6,17 +6,22 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FileCheck2, Settings, Code, FileCode, CheckCircle2, 
-  HelpCircle, Sparkles, BookOpen, Layers, ShieldCheck
+  HelpCircle, Sparkles, BookOpen, Layers, ShieldCheck, LogOut
 } from 'lucide-react';
+import { User } from '@supabase/supabase-js';
 import AdminPanel from './components/AdminPanel';
 import UserProcessPanel from './components/UserProcessPanel';
 import ConfigPanel from './components/ConfigPanel';
+import LoginPanel from './components/LoginPanel';
 import { TipoProcesso, RubricaConfig } from './types';
-import { getLocalData, saveLocalData } from './supabaseClient';
+import { getLocalData, saveLocalData, supabase } from './supabaseClient';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'user' | 'admin' | 'config'>('user');
   const [templates, setTemplates] = useState<TipoProcesso[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLocalAuthBypassed, setIsLocalAuthBypassed] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   
   // Estado global para as configurações de chancela
   const [configChancela, setConfigChancelaState] = useState<RubricaConfig>({
@@ -45,6 +50,24 @@ export default function App() {
       savedConfig.posicaoPagina = 'top-right';
     }
     setConfigChancelaState(savedConfig);
+
+    // Auth Initialization
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        setIsAuthLoading(false);
+      });
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+      });
+
+      return () => subscription.unsubscribe();
+    } else {
+      setIsAuthLoading(false);
+    }
   }, []);
 
   const setConfigChancela = (newConfig: RubricaConfig) => {
@@ -55,6 +78,23 @@ export default function App() {
   const handleTemplatesChange = (newTemplates: TipoProcesso[]) => {
     setTemplates(newTemplates);
   };
+
+  const handleLogout = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    setIsLocalAuthBypassed(false);
+    setUser(null);
+  };
+
+  if (isAuthLoading) {
+    return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500 font-medium">Carregando aplicação...</div>;
+  }
+
+  // Verifica se o usuário não está autenticado e não fez bypass local
+  if (!user && !isLocalAuthBypassed) {
+    return <LoginPanel onLocalLogin={() => setIsLocalAuthBypassed(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans text-slate-800" id="app-root-container">
@@ -111,6 +151,15 @@ export default function App() {
             >
               <Settings className="w-3.5 h-3.5" />
               <span>Gerenciar Checklists</span>
+            </button>
+            <div className="w-px h-6 bg-slate-200/60 my-auto ml-2 mr-1"></div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 cursor-pointer"
+              title="Sair do Sistema"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sair</span>
             </button>
           </nav>
         </div>
