@@ -383,9 +383,9 @@ export const unificarDocumentos = async (
       borderWidth: 1.5,
     });
     
-    // Texto dentro do Ícone - 71º BIMTz (dividido em 2 linhas para caber no selo)
+    // Texto dentro do Ícone - 71º BI Mtz (dividido em 2 linhas para caber no selo)
     const textBadgeTop = "71º";
-    const textBadgeBottom = "BIMTz";
+    const textBadgeBottom = "BI Mtz";
     const textBadgeTopWidth = fonteHelveticaBold.widthOfTextAtSize(textBadgeTop, 9);
     const textBadgeBottomWidth = fonteHelveticaBold.widthOfTextAtSize(textBadgeBottom, 6);
     
