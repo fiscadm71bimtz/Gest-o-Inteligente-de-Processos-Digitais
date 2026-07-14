@@ -259,6 +259,24 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
                 tamanho: file.size,
                 created_at: new Date().toISOString()
               });
+              
+              // Substituir o pesado Base64 local pela URL pública do Supabase para economizar memória (localStorage)
+              setActiveProcesso((prev) => {
+                if (!prev) return prev;
+                const docsAtualizados = prev.documentos.map(d => 
+                  d.id === novoDoc.id ? { ...d, url: publicUrl } : d
+                );
+                const procComUrlNuvem = { ...prev, documentos: docsAtualizados };
+                
+                // Também atualiza a lista global e salva
+                setProcessos((procsAntigos) => {
+                  const novaLista = procsAntigos.map(p => p.id === prev.id ? procComUrlNuvem : p);
+                  saveLocalData('processos_usuario', novaLista);
+                  return novaLista;
+                });
+                
+                return procComUrlNuvem;
+              });
             } else {
               console.warn('Erro ao salvar no Storage do Supabase:', error);
             }
