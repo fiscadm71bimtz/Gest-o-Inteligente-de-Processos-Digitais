@@ -134,19 +134,44 @@ export const unificarDocumentos = async (
             throw new Error('Falha ao decodificar o arquivo local. Tente enviar um arquivo menor ou recarregue a página.');
           }
         } else {
-          // É uma URL externa (ex: Supabase Storage)
+          // Pode ser uma URL externa, do Storage ou nosso novo ponteiro do Banco de Dados
           try {
             let fetched = false;
             
-            // Se for uma URL do nosso bucket Supabase, usamos o SDK oficial para burlar o erro de CORS do fetch direto
-            if (doc.url.includes('documentos-brutos')) {
-              // A URL é do tipo: https://.../public/documentos-brutos/brutos/p-123/arquivo.pdf
-              // Extraímos tudo depois de 'documentos-brutos/'
+            // 1. Nossa nova abordagem à prova de falhas: Arquivo no Banco de Dados (Postgres)
+            if (doc.url.startsWith('db-base64:')) {
+              const docId = doc.url.split(':')[1];
+              const { supabase, isSupabaseConfigured } = await import('../supabaseClient');
+              
+              if (isSupabaseConfigured() && supabase) {
+                const { data, error } = await supabase
+                  .from('documentos_anexados')
+                  .select('arquivo_base64')
+                  .eq('id', docId)
+                  .single();
+                  
+                if (data && data.arquivo_base64) {
+                  // Decodificar do banco de dados (que também salva em Base64)
+                  const base64Parts = data.arquivo_base64.split(',');
+                  const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
+                  const binaryString = atob(base64Data);
+                  const len = binaryString.length;
+                  const bytes = new Uint8Array(len);
+                  for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                  }
+                  docBytes = bytes.buffer;
+                  fetched = true;
+                } else if (error) {
+                  console.warn('Erro ao buscar arquivo no banco:', error);
+                }
+              }
+            }
+            // 2. Abordagem de Backup: Se por acaso ainda for um link do Storage legado
+            else if (doc.url.includes('documentos-brutos')) {
               const urlParts = doc.url.split('documentos-brutos/');
               if (urlParts.length > 1) {
                 const filePath = decodeURIComponent(urlParts[1]);
-                
-                // Import dinâmico para não quebrar dependências circulares
                 const { supabase, isSupabaseConfigured } = await import('../supabaseClient');
                 
                 if (isSupabaseConfigured() && supabase) {
@@ -154,14 +179,12 @@ export const unificarDocumentos = async (
                   if (!error && data) {
                     docBytes = await data.arrayBuffer();
                     fetched = true;
-                  } else {
-                    console.warn('Erro ao baixar via SDK do Supabase:', error);
                   }
                 }
               }
             }
             
-            // Fallback se não for Supabase ou se o SDK falhar
+            // 3. Fallback genérico para fetch caso não seja nem banco nem Storage local
             if (!fetched) {
               const response = await fetch(doc.url);
               if (!response.ok) {
@@ -172,7 +195,7 @@ export const unificarDocumentos = async (
           } catch (fetchErr) {
             console.warn('Falha ao baixar arquivo da nuvem:', fetchErr);
             throw new Error(
-              'O servidor de nuvem bloqueou o acesso ao arquivo (CORS) ou ele não existe mais. ' +
+              'Falha crítica de comunicação com o banco de dados. ' +
               'Por favor, exclua o anexo e faça o upload novamente.'
             );
           }

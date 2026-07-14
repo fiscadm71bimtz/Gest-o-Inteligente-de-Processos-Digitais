@@ -231,57 +231,45 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
         setProcessos(novosProcs);
         saveLocalData('processos_usuario', novosProcs);
 
-        // Upload para Supabase Storage se conectado
+        // Upload para Supabase Banco de Dados se conectado (burlar CORS do Storage)
         if (isSupabaseConfigured() && supabase) {
           try {
-            // Upload do arquivo bruno no Storage
-            const finalPath = `brutos/${activeProcesso.id}/${novoDoc.id}_${file.name}`;
-            const { data, error } = await supabase.storage
-              .from('documentos-brutos')
-              .upload(finalPath, file, {
-                contentType: file.type,
-                upsert: true
-              });
-              
-            if (!error && data) {
-              const { data: { publicUrl } } = supabase.storage
-                .from('documentos-brutos')
-                .getPublicUrl(finalPath);
-                
-              // Atualizar banco de dados do anexo
-              await supabase.from('documentos_anexados').insert({
-                id: novoDoc.id,
-                processo_id: activeProcesso.id,
-                requisito_id: requisitoId,
-                nome_arquivo: file.name,
-                url_storage: publicUrl,
-                extensao: ext,
-                tamanho: file.size,
-                created_at: new Date().toISOString()
-              });
-              
-              // Substituir o pesado Base64 local pela URL pública do Supabase para economizar memória (localStorage)
+            // Salvar no Banco de Dados (Postgres) ao invés do Storage
+            const { error } = await supabase.from('documentos_anexados').insert({
+              id: novoDoc.id,
+              processo_id: activeProcesso.id,
+              requisito_id: requisitoId,
+              nome_arquivo: file.name,
+              url_storage: 'armazenado-no-banco', // placeholder
+              arquivo_base64: reader.result, // A string Base64 completa
+              extensao: ext,
+              tamanho: file.size,
+              created_at: new Date().toISOString()
+            });
+
+            if (!error) {
+              // Substituir o pesado Base64 local por um ponteiro leve para economizar localStorage
               setActiveProcesso((prev) => {
                 if (!prev) return prev;
                 const docsAtualizados = prev.documentos.map(d => 
-                  d.id === novoDoc.id ? { ...d, url: publicUrl } : d
+                  d.id === novoDoc.id ? { ...d, url: `db-base64:${novoDoc.id}` } : d
                 );
-                const procComUrlNuvem = { ...prev, documentos: docsAtualizados };
+                const procComUrlDb = { ...prev, documentos: docsAtualizados };
                 
                 // Também atualiza a lista global e salva
                 setProcessos((procsAntigos) => {
-                  const novaLista = procsAntigos.map(p => p.id === prev.id ? procComUrlNuvem : p);
+                  const novaLista = procsAntigos.map(p => p.id === prev.id ? procComUrlDb : p);
                   saveLocalData('processos_usuario', novaLista);
                   return novaLista;
                 });
                 
-                return procComUrlNuvem;
+                return procComUrlDb;
               });
             } else {
-              console.warn('Erro ao salvar no Storage do Supabase:', error);
+              console.warn('Erro ao salvar Base64 no banco de dados:', error);
             }
           } catch (err) {
-            console.error('Supabase Storage erro:', err);
+            console.error('Supabase DB erro ao anexar arquivo:', err);
           }
         }
       }
