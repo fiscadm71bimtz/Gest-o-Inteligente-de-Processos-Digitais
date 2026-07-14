@@ -73,3 +73,39 @@ CREATE POLICY "Acesso público ao bucket documentos-brutos"
 CREATE POLICY "Acesso público ao bucket processos-unificados" 
   ON storage.objects FOR ALL 
   USING (bucket_id = 'processos-unificados');
+
+-- 7. Tabela: perfis (Cadastro de Usuários Vinculado ao Auth)
+CREATE TABLE IF NOT EXISTS public.perfis (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  nome_completo TEXT,
+  funcao TEXT DEFAULT 'usuario',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.perfis ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de RLS para perfis
+CREATE POLICY "Permitir leitura do próprio perfil" ON public.perfis 
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Permitir atualização do próprio perfil" ON public.perfis 
+  FOR UPDATE USING (auth.uid() = id);
+
+-- Trigger para criar o perfil automaticamente ao cadastrar um usuário na autenticação do Supabase
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.perfis (id, email)
+  VALUES (new.id, new.email);
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Remove o trigger se já existir para evitar erro ao rodar o script novamente
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
