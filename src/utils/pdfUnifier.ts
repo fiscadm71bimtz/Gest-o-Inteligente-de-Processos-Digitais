@@ -300,25 +300,37 @@ export const unificarDocumentos = async (
       color: corCinzaSuave,
     });
     
-    // --- CHANCELAMENTO / RUBRICA VISUAL ---
-    const textoChancela = config.texto.trim() || 'AUTENTICADO DIGITALMENTE';
-    const subTextoHash = `Ref: ${hashProcesso}`;
+    // --- CHANCELAMENTO / RUBRICA VISUAL (GOV.BR STYLE) ---
+    const textoChancela = config.texto.trim() || 'ASSINATURA DIGITAL / GOV.BR';
+    const subTextoHash = `Autenticação: ${hashProcesso}`;
     
-    // Calcula dimensões do selo moderno
-    const larguraTextoPrincipal = fonteHelveticaBold.widthOfTextAtSize(textoChancela, config.tamanhoFonte);
-    const larguraSubTexto = fonteHelvetica.widthOfTextAtSize(subTextoHash, config.tamanhoFonte - 2);
+    const dataAtual = new Date().toLocaleDateString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+    const subTextoData = `Data: ${dataAtual} (Horário de Brasília)`;
+
+    const tamanhoFonteTit = config.tamanhoFonte;
+    const tamanhoFonteSub = config.tamanhoFonte - 2;
+
+    const larguraTextoPrincipal = fonteHelveticaBold.widthOfTextAtSize(textoChancela, tamanhoFonteTit);
+    const larguraSubTextoHash = fonteHelvetica.widthOfTextAtSize(subTextoHash, tamanhoFonteSub);
+    const larguraSubTextoData = fonteHelvetica.widthOfTextAtSize(subTextoData, tamanhoFonteSub);
     
-    // O ícone do selo (simulado por texto) + textos
-    const iconeLargura = 18;
+    // Calcula largura e altura dinamicamente para não sobrepor
+    const maxTextoLargura = Math.max(larguraTextoPrincipal, larguraSubTextoHash, larguraSubTextoData);
     const padding = 10;
-    const espacamentoTexto = 6;
+    const raioCirculo = 12;
+    const espacamentoTexto = 10;
+    const larguraFaixaLateral = 4;
     
-    const larguraRetangulo = Math.max(larguraTextoPrincipal, larguraSubTexto) + iconeLargura + (padding * 2) + espacamentoTexto;
-    const alturaRetangulo = (config.tamanhoFonte * 2) + 12;
+    // Layout: [Faixa 4px] + [padding 10] + [círculo 24px] + [espaço 10px] + [textos] + [padding 10]
+    const larguraRetangulo = larguraFaixaLateral + padding + (raioCirculo * 2) + espacamentoTexto + maxTextoLargura + padding;
+    const alturaRetangulo = 42; 
     
     // Coordenadas baseadas na configuração
     let rx = 35;
-    let ry = 25;
+    let ry = 20; // Mais próximo ao rodapé para dar aspecto oficial
     
     if (config.posicao === 'bottom-right') {
       rx = width - 35 - larguraRetangulo;
@@ -328,84 +340,89 @@ export const unificarDocumentos = async (
       rx = 35;
     } else if (config.posicao === 'top-right') {
       rx = width - 35 - larguraRetangulo;
-      ry = height - 45;
-      
-      // Cabeçalho separador superior
-      page.drawLine({
-        start: { x: 35, y: height - 55 },
-        end: { x: width - 35, y: height - 55 },
-        thickness: 0.5,
-        color: corCinzaSuave,
-      });
+      ry = height - 55;
+      page.drawLine({ start: { x: 35, y: height - 65 }, end: { x: width - 35, y: height - 65 }, thickness: 0.5, color: corCinzaSuave });
     } else if (config.posicao === 'top-left') {
       rx = 35;
-      ry = height - 45;
-      
-      // Cabeçalho separador superior
-      page.drawLine({
-        start: { x: 35, y: height - 55 },
-        end: { x: width - 35, y: height - 55 },
-        thickness: 0.5,
-        color: corCinzaSuave,
-      });
+      ry = height - 55;
+      page.drawLine({ start: { x: 35, y: height - 65 }, end: { x: width - 35, y: height - 65 }, thickness: 0.5, color: corCinzaSuave });
     }
     
-    // Fundo do Carimbo com cor clarinha e borda sutil
     const rgbRubrica = hexToPdfRgb(config.cor);
     
-    // Simula um background ultra leve pegando 10% da cor selecionada (a fórmula é misturar com branco)
-    // Para simplificar, usamos branco fantasma para garantir legibilidade
+    // 1. Fundo do Selo
     page.drawRectangle({
       x: rx,
       y: ry,
       width: larguraRetangulo,
       height: alturaRetangulo,
-      color: rgb(0.98, 0.98, 0.99),
+      color: rgb(0.96, 0.96, 0.96), // Cinza bem clarinho estilo Gov
+      borderColor: corCinzaSuave,
+      borderWidth: 1,
+    });
+    
+    // 2. Faixa Lateral Colorida (Identidade Visual)
+    page.drawRectangle({
+      x: rx,
+      y: ry,
+      width: larguraFaixaLateral,
+      height: alturaRetangulo,
+      color: rgbRubrica,
+    });
+    
+    // 3. Ícone (Círculo Estilo Badge)
+    const circleX = rx + larguraFaixaLateral + padding + raioCirculo;
+    const circleY = ry + (alturaRetangulo / 2);
+    
+    page.drawCircle({
+      x: circleX,
+      y: circleY,
+      size: raioCirculo,
+      color: rgb(1, 1, 1),
       borderColor: rgbRubrica,
       borderWidth: 1.5,
     });
     
-    // Desenha um pequeno ícone/detalhe de segurança no lado esquerdo do selo (simbolizando o selo oficial)
-    const iconeX = rx + padding;
-    const iconeY = ry + (alturaRetangulo / 2) - 4;
-    
-    // Um mini quadrado preenchido
-    page.drawRectangle({
-      x: iconeX,
-      y: iconeY - 2,
-      width: 10,
-      height: 10,
-      color: rgbRubrica,
-    });
-    
-    // Um quadrado vazio sobreposto (estilo selo criptográfico)
-    page.drawRectangle({
-      x: iconeX + 3,
-      y: iconeY - 5,
-      width: 10,
-      height: 10,
-      color: rgb(0.98, 0.98, 0.99), // Cor de fundo para vazar
-      borderColor: rgbRubrica,
-      borderWidth: 1,
-    });
-    
-    // Texto Principal
-    const textX = rx + padding + iconeLargura + espacamentoTexto;
-    page.drawText(textoChancela, {
-      x: textX,
-      y: ry + alturaRetangulo - padding - config.tamanhoFonte + 2,
-      size: config.tamanhoFonte,
+    // Texto dentro do Ícone
+    const textBadge = "BR";
+    const textBadgeWidth = fonteHelveticaBold.widthOfTextAtSize(textBadge, 9);
+    page.drawText(textBadge, {
+      x: circleX - (textBadgeWidth / 2),
+      y: circleY - 3, // Centralização óptica
+      size: 9,
       font: fonteHelveticaBold,
       color: rgbRubrica,
     });
     
-    // Subtexto (Hash de Validação)
+    // 4. Textos à Direita do Ícone
+    const textX = circleX + raioCirculo + espacamentoTexto;
+    
+    // Y base = ry (fundo do selo). As linhas são desenhadas da linha de base para cima.
+    // Linha 1 (Título) - Baseline a 28pts acima do fundo
+    page.drawText(textoChancela, {
+      x: textX,
+      y: ry + 27, 
+      size: tamanhoFonteTit,
+      font: fonteHelveticaBold,
+      color: rgb(0.15, 0.15, 0.15), // Escuro oficial
+    });
+    
+    // Linha 2 (Autenticação Hash)
     page.drawText(subTextoHash, {
       x: textX,
-      y: ry + padding - 1,
-      size: config.tamanhoFonte - 2,
+      y: ry + 16,
+      size: tamanhoFonteSub,
       font: fonteHelvetica,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0.35, 0.35, 0.35),
+    });
+    
+    // Linha 3 (Data/Hora)
+    page.drawText(subTextoData, {
+      x: textX,
+      y: ry + 6,
+      size: tamanhoFonteSub,
+      font: fonteHelvetica,
+      color: rgb(0.35, 0.35, 0.35),
     });
     
     // --- NUMERAÇÃO DE PÁGINA ---
