@@ -320,11 +320,11 @@ export const unificarDocumentos = async (
     // Calcula largura e altura dinamicamente para não sobrepor
     const maxTextoLargura = Math.max(larguraTextoPrincipal, larguraSubTextoHash, larguraSubTextoData);
     const padding = 10;
-    const raioCirculo = 12;
+    const raioCirculo = 14; // Aumentado levemente de 12 para 14 para caber o 71º BIMTz
     const espacamentoTexto = 10;
     const larguraFaixaLateral = 4;
     
-    // Layout: [Faixa 4px] + [padding 10] + [círculo 24px] + [espaço 10px] + [textos] + [padding 10]
+    // Layout: [Faixa 4px] + [padding 10] + [círculo 28px] + [espaço 10px] + [textos] + [padding 10]
     const larguraRetangulo = larguraFaixaLateral + padding + (raioCirculo * 2) + espacamentoTexto + maxTextoLargura + padding;
     const alturaRetangulo = 42; 
     
@@ -383,13 +383,24 @@ export const unificarDocumentos = async (
       borderWidth: 1.5,
     });
     
-    // Texto dentro do Ícone
-    const textBadge = "BR";
-    const textBadgeWidth = fonteHelveticaBold.widthOfTextAtSize(textBadge, 9);
-    page.drawText(textBadge, {
-      x: circleX - (textBadgeWidth / 2),
-      y: circleY - 3, // Centralização óptica
+    // Texto dentro do Ícone - 71º BIMTz (dividido em 2 linhas para caber no selo)
+    const textBadgeTop = "71º";
+    const textBadgeBottom = "BIMTz";
+    const textBadgeTopWidth = fonteHelveticaBold.widthOfTextAtSize(textBadgeTop, 9);
+    const textBadgeBottomWidth = fonteHelveticaBold.widthOfTextAtSize(textBadgeBottom, 6);
+    
+    page.drawText(textBadgeTop, {
+      x: circleX - (textBadgeTopWidth / 2),
+      y: circleY + 2, // Metade superior
       size: 9,
+      font: fonteHelveticaBold,
+      color: rgbRubrica,
+    });
+    
+    page.drawText(textBadgeBottom, {
+      x: circleX - (textBadgeBottomWidth / 2) + 0.5, // Centralização óptica fina
+      y: circleY - 6, // Metade inferior
+      size: 6,
       font: fonteHelveticaBold,
       color: rgbRubrica,
     });
