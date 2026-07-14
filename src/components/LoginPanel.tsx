@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
-import { ShieldCheck, Mail, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { ShieldCheck, User, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 
 interface LoginPanelProps {
   onLocalLogin: () => void;
@@ -8,7 +8,7 @@ interface LoginPanelProps {
 
 export default function LoginPanel({ onLocalLogin }: LoginPanelProps) {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +17,16 @@ export default function LoginPanel({ onLocalLogin }: LoginPanelProps) {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    if (cpfLimpo.length !== 11) {
+      setError('CPF inválido. Digite os 11 números.');
+      setLoading(false);
+      return;
+    }
+    
+    // Supabase exige e-mail padrão. Criamos um e-mail falso vinculado ao CPF.
+    const pseudoEmail = `${cpfLimpo}@processos.gov.br`;
 
     // Modo Offline / Sandbox
     if (!isSupabaseConfigured()) {
@@ -32,16 +42,26 @@ export default function LoginPanel({ onLocalLogin }: LoginPanelProps) {
       try {
         if (isLogin) {
           const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
+            email: pseudoEmail,
             password,
           });
-          if (signInError) throw signInError;
+          if (signInError) {
+            if (signInError.message.includes('Invalid login credentials')) {
+              throw new Error('CPF ou senha incorretos.');
+            }
+            throw signInError;
+          }
         } else {
           const { error: signUpError } = await supabase.auth.signUp({
-            email,
+            email: pseudoEmail,
             password,
           });
-          if (signUpError) throw signUpError;
+          if (signUpError) {
+            if (signUpError.message.includes('User already registered')) {
+              throw new Error('Este CPF já está cadastrado.');
+            }
+            throw signUpError;
+          }
           else {
             alert('Conta criada com sucesso! Você já pode fazer login.');
             setIsLogin(true);
@@ -53,6 +73,21 @@ export default function LoginPanel({ onLocalLogin }: LoginPanelProps) {
         setLoading(false);
       }
     }
+  };
+
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Formatação visual básica (000.000.000-00)
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    if (value.length > 9) {
+      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    } else if (value.length > 6) {
+      value = value.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+    } else if (value.length > 3) {
+      value = value.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+    }
+    setCpf(value);
   };
 
   return (
@@ -88,24 +123,24 @@ export default function LoginPanel({ onLocalLogin }: LoginPanelProps) {
             {!isSupabaseConfigured() && (
               <div className="bg-amber-50/50 border border-amber-200/80 p-3.5 rounded-2xl flex items-start space-x-3 text-amber-700 text-xs font-bold shadow-inner mb-4">
                 <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>Modo Sandbox: Supabase não detectado. Você pode entrar com qualquer e-mail e senha.</span>
+                <span>Modo Sandbox: Supabase não detectado. Você pode entrar com qualquer CPF e senha.</span>
               </div>
             )}
 
             <div className="space-y-1.5">
               <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider block ml-1">
-                E-mail
+                CPF
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="w-4 h-4 text-slate-400" />
+                  <User className="w-4 h-4 text-slate-400" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
+                  value={cpf}
+                  onChange={handleCpfChange}
+                  placeholder="000.000.000-00"
                   className="w-full text-sm pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-medium text-slate-800 placeholder:text-slate-400"
                 />
               </div>
