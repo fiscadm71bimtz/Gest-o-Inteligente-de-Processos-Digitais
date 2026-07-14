@@ -106,15 +106,33 @@ export const unificarDocumentos = async (
     onProgress?.(descProcesso, Math.floor(5 + (documentosProcessados / totalDocs) * 60));
     
     try {
-      let docBytes: ArrayBuffer;
+      let docBytes: ArrayBuffer | Uint8Array | undefined;
       
-      // Se tiver bytes carregados em memória (modo offline) usamos eles diretamente
-      if (doc.bytes) {
+      // Validação rigorosa do tipo de bytes (ArrayBuffer não sobrevive no localStorage nativamente)
+      if (doc.bytes && (doc.bytes instanceof ArrayBuffer || doc.bytes instanceof Uint8Array)) {
         docBytes = doc.bytes;
-      } else {
-        // Caso contrário, buscamos via fetch (da URL do Storage)
-        const response = await fetch(doc.url);
-        docBytes = await response.arrayBuffer();
+      } 
+      
+      // Se não temos bytes válidos em memória, tentamos buscar pela URL
+      if (!docBytes) {
+        try {
+          const response = await fetch(doc.url);
+          if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+          }
+          docBytes = await response.arrayBuffer();
+        } catch (fetchErr) {
+          console.warn('Falha ao buscar doc.url:', fetchErr);
+          throw new Error(
+            'Arquivo indisponível na memória. Se você recarregou a página sem salvar na nuvem, ' +
+            'o arquivo temporário foi perdido. Por favor, remova este anexo e faça o upload novamente.'
+          );
+        }
+      }
+      
+      // Fallback final de segurança para garantir que não passaremos algo inválido para o pdf-lib
+      if (!docBytes || !(docBytes instanceof ArrayBuffer || docBytes instanceof Uint8Array)) {
+        throw new Error('O conteúdo do arquivo é inválido ou está corrompido.');
       }
       
       if (doc.extensao === 'pdf') {
@@ -129,7 +147,7 @@ export const unificarDocumentos = async (
         }
       } else {
         // É uma imagem (PNG, JPG ou JPEG), vamos converter para PDF
-        let jpegBytes: ArrayBuffer;
+        let jpegBytes: ArrayBuffer | Uint8Array;
         
         if (doc.extensao === 'png' || doc.extensao === 'jpeg' || doc.extensao === 'jpg') {
           // Usamos nossa função canvas para normalizar e compactar para JPG
