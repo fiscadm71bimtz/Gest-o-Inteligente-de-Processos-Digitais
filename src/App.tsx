@@ -20,7 +20,7 @@ export default function App() {
   
   // Estado global para as configurações de chancela
   const [configChancela, setConfigChancelaState] = useState<RubricaConfig>({
-    texto: 'ASSINATURA DIGITAL / GOV.BR',
+    texto: 'ASSINATURA DIGITAL',
     posicao: 'bottom-right',
     posicaoPagina: 'top-right',
     cor: '#1d4ed8', // Azul corporativo
@@ -32,7 +32,7 @@ export default function App() {
   // Carregar as configurações globais apenas no mount
   useEffect(() => {
     const savedConfig = getLocalData<RubricaConfig>('config_chancela_global', {
-      texto: 'ASSINATURA DIGITAL / GOV.BR',
+      texto: 'ASSINATURA DIGITAL',
       posicao: 'bottom-right',
       posicaoPagina: 'top-right',
       cor: '#1d4ed8',

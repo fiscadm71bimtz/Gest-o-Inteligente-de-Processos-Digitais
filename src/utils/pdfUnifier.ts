@@ -301,7 +301,7 @@ export const unificarDocumentos = async (
     });
     
     // --- CHANCELAMENTO / RUBRICA VISUAL (GOV.BR STYLE) ---
-    const textoChancela = config.texto.trim() || 'ASSINATURA DIGITAL / GOV.BR';
+    const textoChancela = config.texto.trim() || 'ASSINATURA DIGITAL';
     const subTextoHash = `Autenticação: ${hashProcesso}`;
     
     const dataAtual = new Date().toLocaleDateString('pt-BR', {

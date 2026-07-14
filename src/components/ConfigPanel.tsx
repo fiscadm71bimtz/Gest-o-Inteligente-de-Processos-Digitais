@@ -53,7 +53,7 @@ export default function ConfigPanel({ configChancela, setConfigChancela }: Confi
               type="text"
               value={configChancela.texto}
               onChange={(e) => setConfigChancela({ ...configChancela, texto: e.target.value })}
-              placeholder="Ex: ASSINATURA DIGITAL / GOV.BR"
+              placeholder="Ex: ASSINATURA DIGITAL"
               className="w-full text-xs px-4 py-3 bg-slate-50/50 border border-slate-200/80 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-bold text-slate-800 shadow-inner shadow-slate-100/50"
             />
           </div>
