@@ -871,37 +871,40 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
               </div>
 
               {/* PDF Unification / Stamp Customizer Pane (Bento Box) */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] space-y-6">
-                <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
-                  <div className="bg-indigo-50 text-indigo-600 p-1.5 rounded-lg">
-                    <Stamp className="w-4 h-4" />
+              <div className="relative bg-white p-7 rounded-3xl border border-slate-200/60 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.04)] space-y-6 overflow-hidden z-0">
+                {/* Background decorative gradient */}
+                <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-indigo-100/60 to-transparent rounded-full blur-3xl -z-10 -translate-y-1/3 translate-x-1/3"></div>
+
+                <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+                  <div className="bg-gradient-to-br from-indigo-500 to-violet-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-500/20">
+                    <Stamp className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-slate-900 text-sm">
+                    <h3 className="font-extrabold text-slate-900 text-[15px]">
                       Selo de Chancela & Autenticação Digital
                     </h3>
-                    <p className="text-[11px] text-slate-400">Configure as informações que serão gravadas sequencialmente em cada página do PDF.</p>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Configure as credenciais e metadados que serão impressos no documento final.</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Texto de Autenticação</label>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                  <div className="md:col-span-5 space-y-1.5">
+                    <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block ml-1">Texto de Autenticação</label>
                     <input
                       type="text"
                       value={configChancela.texto}
                       onChange={(e) => setConfigChancela({ ...configChancela, texto: e.target.value })}
                       placeholder="Ex: COPIA FIEL DO ORIGINAL"
-                      className="w-full text-xs px-3.5 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium"
+                      className="w-full text-xs px-4 py-3 bg-slate-50/50 border border-slate-200/80 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-bold text-slate-800 shadow-inner shadow-slate-100/50"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Posição na Página</label>
+                  <div className="md:col-span-4 space-y-1.5">
+                    <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block ml-1">Posição na Página</label>
                     <select
                       value={configChancela.posicao}
                       onChange={(e) => setConfigChancela({ ...configChancela, posicao: e.target.value as any })}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium cursor-pointer"
+                      className="w-full text-xs px-4 py-3 bg-slate-50/50 border border-slate-200/80 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-bold text-slate-800 cursor-pointer shadow-inner shadow-slate-100/50"
                     >
                       <option value="bottom-right">Rodapé Direito</option>
                       <option value="bottom-left">Rodapé Esquerdo</option>
@@ -911,78 +914,87 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Cor do Selo</label>
-                    <div className="flex items-center space-x-2">
+                  <div className="md:col-span-3 space-y-1.5">
+                    <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block ml-1">Cor do Selo</label>
+                    <div className="flex items-center space-x-3 bg-slate-50/50 border border-slate-200/80 p-2 rounded-2xl shadow-inner shadow-slate-100/50 focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:border-indigo-400 transition-all">
                       <input
                         type="color"
                         value={configChancela.cor}
                         onChange={(e) => setConfigChancela({ ...configChancela, cor: e.target.value })}
-                        className="w-9 h-9 rounded-xl border border-slate-200 p-0 cursor-pointer overflow-hidden shrink-0"
+                        className="w-8 h-8 rounded-xl border-0 p-0 cursor-pointer overflow-hidden shrink-0 bg-transparent"
                       />
                       <input
                         type="text"
                         value={configChancela.cor}
                         onChange={(e) => setConfigChancela({ ...configChancela, cor: e.target.value })}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl font-mono font-semibold text-slate-700"
+                        className="w-full text-xs bg-transparent border-none font-mono font-bold text-slate-700 focus:outline-none uppercase tracking-wider"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-5 items-center bg-slate-50/60 p-4 rounded-2xl border border-slate-100 text-xs">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="incluirPagina"
-                      checked={configChancela.incluirPagina}
-                      onChange={(e) => setConfigChancela({ ...configChancela, incluirPagina: e.target.checked })}
-                      className="w-4 h-4 text-indigo-600 rounded-md border-slate-300 focus:ring-indigo-500/10 cursor-pointer"
-                    />
-                    <label htmlFor="incluirPagina" className="text-xs text-slate-600 font-bold select-none cursor-pointer">
-                      Páginas Numeradas ("Página X de Y")
-                    </label>
-                  </div>
+                <div className="flex flex-wrap gap-x-8 gap-y-5 items-center bg-gradient-to-r from-slate-50 to-indigo-50/40 p-5 rounded-2xl border border-slate-100/80 text-xs shadow-sm shadow-slate-200/20">
+                  <label className="flex items-center cursor-pointer space-x-3 group">
+                    <div className="relative">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={configChancela.incluirPagina} 
+                        onChange={(e) => setConfigChancela({ ...configChancela, incluirPagina: e.target.checked })} 
+                      />
+                      <div className="w-10 h-5.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-indigo-500 group-hover:after:scale-95 shadow-inner"></div>
+                    </div>
+                    <span className="text-xs text-slate-700 font-extrabold select-none group-hover:text-indigo-700 transition-colors">
+                      Páginas Numeradas
+                    </span>
+                  </label>
 
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="incluirData"
-                      checked={configChancela.incluirData}
-                      onChange={(e) => setConfigChancela({ ...configChancela, incluirData: e.target.checked })}
-                      className="w-4 h-4 text-indigo-600 rounded-md border-slate-300 focus:ring-indigo-500/10 cursor-pointer"
-                    />
-                    <label htmlFor="incluirData" className="text-xs text-slate-600 font-bold select-none cursor-pointer">
-                      Incluir Data/Hora de Chancela
-                    </label>
-                  </div>
+                  <label className="flex items-center cursor-pointer space-x-3 group">
+                    <div className="relative">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={configChancela.incluirData} 
+                        onChange={(e) => setConfigChancela({ ...configChancela, incluirData: e.target.checked })} 
+                      />
+                      <div className="w-10 h-5.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-indigo-500 group-hover:after:scale-95 shadow-inner"></div>
+                    </div>
+                    <span className="text-xs text-slate-700 font-extrabold select-none group-hover:text-indigo-700 transition-colors">
+                      Data e Hora
+                    </span>
+                  </label>
 
-                  <div className="flex items-center space-x-2 ml-auto">
-                    <label className="text-xs text-slate-500 font-extrabold select-none uppercase tracking-wider">Tamanho (pt):</label>
-                    <input
-                      type="number"
-                      min="6"
-                      max="14"
-                      value={configChancela.tamanhoFonte}
-                      onChange={(e) => setConfigChancela({ ...configChancela, tamanhoFonte: parseInt(e.target.value) || 9 })}
-                      className="w-14 px-2 py-1 border border-slate-250 rounded-xl text-center font-mono font-bold"
-                    />
+                  <div className="flex items-center space-x-3 ml-auto border-l border-slate-200/80 pl-6">
+                    <label className="text-[10px] text-slate-500 font-extrabold select-none uppercase tracking-wider">Tamanho (pt)</label>
+                    <div className="flex items-center bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
+                      <button 
+                        onClick={() => setConfigChancela({ ...configChancela, tamanhoFonte: Math.max(6, configChancela.tamanhoFonte - 1) })}
+                        className="px-3 py-1.5 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 transition-colors font-bold text-sm cursor-pointer"
+                      >-</button>
+                      <div className="px-3 py-1.5 font-mono font-bold text-indigo-700 text-xs border-x border-slate-100 bg-indigo-50/30 min-w-[36px] text-center">
+                        {configChancela.tamanhoFonte}
+                      </div>
+                      <button 
+                        onClick={() => setConfigChancela({ ...configChancela, tamanhoFonte: Math.min(16, configChancela.tamanhoFonte + 1) })}
+                        className="px-3 py-1.5 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 transition-colors font-bold text-sm cursor-pointer"
+                      >+</button>
+                    </div>
                   </div>
                 </div>
 
                 {/* BOTÃO UNIFICAR */}
-                <div className="pt-2 flex justify-center md:justify-end">
+                <div className="pt-3 flex justify-center md:justify-end">
                   <button
                     onClick={handleUnificarProcesso}
                     disabled={activeProcesso.documentos.length === 0}
-                    className={`flex items-center space-x-2 px-7 py-3.5 text-white text-xs font-bold rounded-2xl shadow-md transition-all ${
+                    className={`flex items-center space-x-2.5 px-8 py-4 text-white text-xs font-bold rounded-2xl shadow-lg transition-all ${
                       activeProcesso.documentos.length === 0
                         ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-                        : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 hover:shadow-lg hover:shadow-indigo-600/10 active:scale-[0.98] cursor-pointer'
+                        : 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-700 hover:via-indigo-600 hover:to-violet-700 hover:shadow-indigo-600/30 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer ring-4 ring-indigo-500/20'
                     }`}
                   >
                     <Layers className="w-4 h-4" />
-                    <span>Gerar Processo Unificado e Chancelado</span>
+                    <span className="tracking-wide">GERAR PROCESSO UNIFICADO</span>
                   </button>
                 </div>
               </div>

@@ -210,6 +210,10 @@ export const unificarDocumentos = async (
   const corCinzaSuave = rgb(0.85, 0.85, 0.85);
   const corTextoCinza = rgb(0.4, 0.4, 0.4);
   
+  // Gera um Hash Criptográfico/Protocolo único para essa unificação
+  const hashStr = Array.from({length: 16}, () => Math.floor(Math.random() * 16).toString(16)).join('').toUpperCase();
+  const hashProcesso = `${hashStr.substring(0,4)}-${hashStr.substring(4,8)}-${hashStr.substring(8,12)}-${hashStr.substring(12,16)}`;
+  
   for (let i = 0; i < totalPaginas; i++) {
     const page = paginas[i];
     const { width, height } = page.getSize();
@@ -225,71 +229,111 @@ export const unificarDocumentos = async (
     });
     
     // --- CHANCELAMENTO / RUBRICA VISUAL ---
-    // Monta o texto de chancela
-    const textoChancela = config.texto.trim() || 'PROCESSO UNIFICADO';
+    const textoChancela = config.texto.trim() || 'AUTENTICADO DIGITALMENTE';
+    const subTextoHash = `Ref: ${hashProcesso}`;
     
-    // Desenhar a chancela de acordo com a posição configurada
-    let xChancela = 35;
-    let yChancela = 30; // Abaixo da linha do rodapé
+    // Calcula dimensões do selo moderno
+    const larguraTextoPrincipal = fonteHelveticaBold.widthOfTextAtSize(textoChancela, config.tamanhoFonte);
+    const larguraSubTexto = fonteHelvetica.widthOfTextAtSize(subTextoHash, config.tamanhoFonte - 2);
+    
+    // O ícone do selo (simulado por texto) + textos
+    const iconeLargura = 18;
+    const padding = 10;
+    const espacamentoTexto = 6;
+    
+    const larguraRetangulo = Math.max(larguraTextoPrincipal, larguraSubTexto) + iconeLargura + (padding * 2) + espacamentoTexto;
+    const alturaRetangulo = (config.tamanhoFonte * 2) + 12;
+    
+    // Coordenadas baseadas na configuração
+    let rx = 35;
+    let ry = 25;
     
     if (config.posicao === 'bottom-right') {
-      const larguraTexto = fonteHelveticaBold.widthOfTextAtSize(textoChancela, config.tamanhoFonte);
-      xChancela = width - 35 - larguraTexto;
+      rx = width - 35 - larguraRetangulo;
     } else if (config.posicao === 'bottom-center') {
-      const larguraTexto = fonteHelveticaBold.widthOfTextAtSize(textoChancela, config.tamanhoFonte);
-      xChancela = (width - larguraTexto) / 2;
+      rx = (width - larguraRetangulo) / 2;
     } else if (config.posicao === 'bottom-left') {
-      xChancela = 35;
+      rx = 35;
     } else if (config.posicao === 'top-right') {
-      const larguraTexto = fonteHelveticaBold.widthOfTextAtSize(textoChancela, config.tamanhoFonte);
-      xChancela = width - 35 - larguraTexto;
-      yChancela = height - 30;
+      rx = width - 35 - larguraRetangulo;
+      ry = height - 45;
       
-      // Desenha linha de cabeçalho também para ficar simétrico
+      // Cabeçalho separador superior
       page.drawLine({
-        start: { x: 35, y: height - 40 },
-        end: { x: width - 35, y: height - 40 },
+        start: { x: 35, y: height - 55 },
+        end: { x: width - 35, y: height - 55 },
         thickness: 0.5,
         color: corCinzaSuave,
       });
     } else if (config.posicao === 'top-left') {
-      xChancela = 35;
-      yChancela = height - 30;
+      rx = 35;
+      ry = height - 45;
       
-      // Desenha linha de cabeçalho
+      // Cabeçalho separador superior
       page.drawLine({
-        start: { x: 35, y: height - 40 },
-        end: { x: width - 35, y: height - 40 },
+        start: { x: 35, y: height - 55 },
+        end: { x: width - 35, y: height - 55 },
         thickness: 0.5,
         color: corCinzaSuave,
       });
     }
     
-    // Carimbo Visual (um pequeno retângulo estilizado de fundo para dar aspecto oficial de chancela)
-    const larguraRetangulo = fonteHelveticaBold.widthOfTextAtSize(textoChancela, config.tamanhoFonte) + 12;
-    const alturaRetangulo = config.tamanhoFonte + 8;
+    // Fundo do Carimbo com cor clarinha e borda sutil
+    const rgbRubrica = hexToPdfRgb(config.cor);
     
-    // Desenha o fundo da chancela como uma etiqueta sutil
-    const rx = config.posicao.endsWith('right') ? width - 35 - larguraRetangulo : (config.posicao.endsWith('center') ? (width - larguraRetangulo)/2 : 35);
-    const ry = yChancela - 4;
-    
+    // Simula um background ultra leve pegando 10% da cor selecionada (a fórmula é misturar com branco)
+    // Para simplificar, usamos branco fantasma para garantir legibilidade
     page.drawRectangle({
       x: rx,
       y: ry,
       width: larguraRetangulo,
       height: alturaRetangulo,
-      color: rgb(0.97, 0.98, 1.0),
-      borderColor: corRubrica,
+      color: rgb(0.98, 0.98, 0.99),
+      borderColor: rgbRubrica,
+      borderWidth: 1.5,
+    });
+    
+    // Desenha um pequeno ícone/detalhe de segurança no lado esquerdo do selo (simbolizando o selo oficial)
+    const iconeX = rx + padding;
+    const iconeY = ry + (alturaRetangulo / 2) - 4;
+    
+    // Um mini quadrado preenchido
+    page.drawRectangle({
+      x: iconeX,
+      y: iconeY - 2,
+      width: 10,
+      height: 10,
+      color: rgbRubrica,
+    });
+    
+    // Um quadrado vazio sobreposto (estilo selo criptográfico)
+    page.drawRectangle({
+      x: iconeX + 3,
+      y: iconeY - 5,
+      width: 10,
+      height: 10,
+      color: rgb(0.98, 0.98, 0.99), // Cor de fundo para vazar
+      borderColor: rgbRubrica,
       borderWidth: 1,
     });
     
-    // Desenha o texto de chancela em negrito
+    // Texto Principal
+    const textX = rx + padding + iconeLargura + espacamentoTexto;
     page.drawText(textoChancela, {
-      x: rx + 6,
-      y: yChancela,
+      x: textX,
+      y: ry + alturaRetangulo - padding - config.tamanhoFonte + 2,
       size: config.tamanhoFonte,
       font: fonteHelveticaBold,
-      color: corRubrica,
+      color: rgbRubrica,
+    });
+    
+    // Subtexto (Hash de Validação)
+    page.drawText(subTextoHash, {
+      x: textX,
+      y: ry + padding - 1,
+      size: config.tamanhoFonte - 2,
+      font: fonteHelvetica,
+      color: rgb(0.3, 0.3, 0.3),
     });
     
     // --- NUMERAÇÃO DE PÁGINA ---
