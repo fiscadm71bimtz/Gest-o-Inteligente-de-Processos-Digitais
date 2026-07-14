@@ -768,10 +768,89 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
                     })}
                   </div>
                 ) : (
-                  <div className="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
-                    Template de checklist não configurado. Adicione-o no Painel Administrativo.
+                  <div className="text-center py-4 bg-amber-50 rounded-2xl border border-dashed border-amber-200 text-amber-600 text-xs font-medium">
+                    Modelo de checklist não configurado. Adicione documentos avulsos abaixo.
                   </div>
                 )}
+
+                {/* Seção de Documentos Avulsos / Extras */}
+                <div className="mt-6 pt-6 border-t border-slate-100">
+                  <h4 className="font-extrabold text-slate-900 text-xs mb-4">
+                    {templateAtivo ? 'Documentos Adicionais' : 'Anexos do Processo'}
+                  </h4>
+                  <div className="space-y-4.5">
+                    {activeProcesso.documentos
+                      .filter(d => !templateAtivo?.requisitos.some(r => r.id === d.requisitoId))
+                      .map((anexo) => (
+                        <div key={anexo.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                          <div className="space-y-1 flex-1 pr-4">
+                            <span className="font-bold text-slate-900 text-xs">{anexo.requisitoNome}</span>
+                          </div>
+                          <div className="w-full md:w-auto min-w-[250px] md:max-w-[320px]">
+                            <div className="bg-white p-3 rounded-xl border border-slate-200/80 flex items-center justify-between shadow-sm/5">
+                              <div className="flex items-center space-x-2.5 max-w-[85%]">
+                                <div className="bg-indigo-50 text-indigo-600 p-2 rounded-lg shrink-0">
+                                  <FileText className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0 break-all">
+                                  <span className="text-xs font-bold text-slate-850 block">{anexo.nomeArquivo}</span>
+                                  <span className="text-[10px] text-slate-400 font-mono font-medium block">
+                                    {anexo.extensao.toUpperCase()} • {formatSize(anexo.tamanho)}
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRemoveAnexo(anexo.id)}
+                                className="text-slate-400 hover:text-rose-500 p-1.5 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+                                title="Remover anexo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                    {/* Novo Documento Avulso */}
+                    <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="space-y-1 flex-1 pr-4">
+                        <span className="font-bold text-slate-900 text-xs">Anexar Novo Documento</span>
+                        <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Faça upload de um documento extra para este processo.</p>
+                      </div>
+                      <div className="w-full md:w-auto min-w-[250px] md:max-w-[320px]">
+                        <div
+                          onDragOver={(e) => handleDragOver(e, 'doc-avulso')}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, `avulso-${Date.now()}`, 'Documento Adicional')}
+                          onClick={() => fileInputRefs.current['doc-avulso']?.click()}
+                          className={`border-2 border-dashed rounded-2xl p-3.5 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center space-y-1.5 ${
+                            dragSlotId === 'doc-avulso'
+                              ? 'border-indigo-500 bg-indigo-50/50'
+                              : 'border-slate-200/70 hover:border-indigo-400 hover:bg-white bg-white'
+                          }`}
+                        >
+                          <UploadCloud className="w-5 h-5 text-indigo-500" />
+                          <div className="text-[11px] text-slate-600 font-medium">
+                            <span className="font-bold text-indigo-600">Arraste ou clique</span> para enviar
+                          </div>
+                          <span className="text-[9px] text-slate-400 font-mono font-medium">PDF, PNG ou JPG</span>
+                          <input
+                            type="file"
+                            ref={(el) => { fileInputRefs.current['doc-avulso'] = el; }}
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files.length > 0) {
+                                handleFileChange(`avulso-${Date.now()}`, 'Documento Adicional', e.target.files);
+                                e.target.value = '';
+                              }
+                            }}
+                            accept="application/pdf, image/jpeg, image/jpg, image/png"
+                            className="hidden"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* PDF Unification / Stamp Customizer Pane (Bento Box) */}

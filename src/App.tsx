@@ -71,12 +71,12 @@ export default function App() {
 
       {/* CONTEÚDO PRINCIPAL (RENDERIZAÇÃO DINÂMICA DE ABAS) */}
       <main className="flex-1 py-8">
-        {activeTab === 'user' && (
+        <div className={activeTab === 'user' ? 'block' : 'hidden'}>
           <UserProcessPanel templates={templates} />
-        )}
-        {activeTab === 'admin' && (
+        </div>
+        <div className={activeTab === 'admin' ? 'block' : 'hidden'}>
           <AdminPanel onTemplatesChange={handleTemplatesChange} />
-        )}
+        </div>
       </main>
 
       {/* FOOTER */}
