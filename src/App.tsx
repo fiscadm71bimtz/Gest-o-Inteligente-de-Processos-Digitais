@@ -3,18 +3,54 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileCheck2, Settings, Code, FileCode, CheckCircle2, 
-  HelpCircle, Sparkles, BookOpen, Layers
+  HelpCircle, Sparkles, BookOpen, Layers, ShieldCheck
 } from 'lucide-react';
 import AdminPanel from './components/AdminPanel';
 import UserProcessPanel from './components/UserProcessPanel';
-import { TipoProcesso } from './types';
+import ConfigPanel from './components/ConfigPanel';
+import { TipoProcesso, RubricaConfig } from './types';
+import { getLocalData, saveLocalData } from './supabaseClient';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'user' | 'admin'>('user');
+  const [activeTab, setActiveTab] = useState<'user' | 'admin' | 'config'>('user');
   const [templates, setTemplates] = useState<TipoProcesso[]>([]);
+  
+  // Estado global para as configurações de chancela
+  const [configChancela, setConfigChancelaState] = useState<RubricaConfig>({
+    texto: 'ASSINATURA DIGITAL / GOV.BR',
+    posicao: 'bottom-right',
+    posicaoPagina: 'top-right',
+    cor: '#1d4ed8', // Azul corporativo
+    incluirData: true,
+    incluirPagina: true,
+    tamanhoFonte: 9,
+  });
+
+  // Carregar as configurações globais apenas no mount
+  useEffect(() => {
+    const savedConfig = getLocalData<RubricaConfig>('config_chancela_global', {
+      texto: 'ASSINATURA DIGITAL / GOV.BR',
+      posicao: 'bottom-right',
+      posicaoPagina: 'top-right',
+      cor: '#1d4ed8',
+      incluirData: true,
+      incluirPagina: true,
+      tamanhoFonte: 9,
+    });
+    // Se posicaoPagina não existir nas configs salvas antigas, define um valor default
+    if (!savedConfig.posicaoPagina) {
+      savedConfig.posicaoPagina = 'top-right';
+    }
+    setConfigChancelaState(savedConfig);
+  }, []);
+
+  const setConfigChancela = (newConfig: RubricaConfig) => {
+    setConfigChancelaState(newConfig);
+    saveLocalData('config_chancela_global', newConfig);
+  };
 
   const handleTemplatesChange = (newTemplates: TipoProcesso[]) => {
     setTemplates(newTemplates);
@@ -55,6 +91,17 @@ export default function App() {
               <span>Gerar Processo</span>
             </button>
             <button
+              onClick={() => setActiveTab('config')}
+              className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                activeTab === 'config'
+                  ? 'bg-white text-indigo-600 shadow-[0_2px_8px_-1px_rgba(0,0,0,0.06)] border border-slate-200/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/45'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Configurações</span>
+            </button>
+            <button
               onClick={() => setActiveTab('admin')}
               className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                 activeTab === 'admin'
@@ -70,12 +117,15 @@ export default function App() {
       </header>
 
       {/* CONTEÚDO PRINCIPAL (RENDERIZAÇÃO DINÂMICA DE ABAS) */}
-      <main className="flex-1 py-8">
+      <main className="flex-1 py-8 px-6">
         <div className={activeTab === 'user' ? 'block' : 'hidden'}>
-          <UserProcessPanel templates={templates} />
+          <UserProcessPanel templates={templates} configChancela={configChancela} />
         </div>
         <div className={activeTab === 'admin' ? 'block' : 'hidden'}>
           <AdminPanel onTemplatesChange={handleTemplatesChange} />
+        </div>
+        <div className={activeTab === 'config' ? 'block' : 'hidden'}>
+          <ConfigPanel configChancela={configChancela} setConfigChancela={setConfigChancela} />
         </div>
       </main>
 

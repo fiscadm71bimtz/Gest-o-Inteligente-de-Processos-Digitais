@@ -437,25 +437,37 @@ export const unificarDocumentos = async (
     });
     
     // --- NUMERAÇÃO DE PÁGINA ---
-    if (config.incluirPagina) {
-      const textoPagina = `Página ${i + 1} de ${totalPaginas}`;
+    if (config.incluirPagina && i > 0) { // Ignora a capa (página 0)
+      const textoPagina = `Página ${i} de ${totalPaginas - 1}`;
       const tamanhoPaginaFonte = 8;
       const larguraTextoPagina = fonteHelvetica.widthOfTextAtSize(textoPagina, tamanhoPaginaFonte);
       
-      // Coloca a numeração do lado oposto da rubrica no rodapé para balancear
       let xPagina = 35;
-      if (config.posicao === 'bottom-left' || config.posicao === 'top-left') {
+      let yPagina = 28;
+      
+      // Utiliza a configuração exclusiva de numeração de página (fallback caso não exista)
+      const posicaoNumeracao = config.posicaoPagina || 'top-right';
+      
+      if (posicaoNumeracao === 'bottom-right') {
         xPagina = width - 35 - larguraTextoPagina;
-      } else if (config.posicao === 'bottom-right' || config.posicao === 'top-right') {
+        yPagina = 28;
+      } else if (posicaoNumeracao === 'bottom-left') {
         xPagina = 35;
-      } else {
-        // No centro, então página fica na direita
+        yPagina = 28;
+      } else if (posicaoNumeracao === 'bottom-center') {
+        xPagina = (width - larguraTextoPagina) / 2;
+        yPagina = 28;
+      } else if (posicaoNumeracao === 'top-right') {
         xPagina = width - 35 - larguraTextoPagina;
+        yPagina = height - 35;
+      } else if (posicaoNumeracao === 'top-left') {
+        xPagina = 35;
+        yPagina = height - 35;
       }
       
       page.drawText(textoPagina, {
         x: xPagina,
-        y: 28, // Altura padrão do rodapé
+        y: yPagina,
         size: tamanhoPaginaFonte,
         font: fonteHelvetica,
         color: corTextoCinza,
