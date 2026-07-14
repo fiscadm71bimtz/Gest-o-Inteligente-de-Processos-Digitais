@@ -210,17 +210,16 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
 
     const reader = new FileReader();
     reader.onload = async () => {
-      if (reader.result instanceof ArrayBuffer) {
+      if (typeof reader.result === 'string') {
         const novoDoc: DocumentoAnexo = {
           id: `doc-${Date.now()}`,
           requisitoId,
           requisitoNome,
           nomeArquivo: file.name,
-          url: URL.createObjectURL(file), // Local Blob URL para visualização imediata
+          url: reader.result, // Base64 Data URL salva nativamente e resiste a F5 no modo offline
           extensao: ext,
           dataUpload: new Date().toLocaleDateString('pt-BR'),
-          tamanho: file.size,
-          bytes: reader.result // bytes armazenados localmente na memória para o unificador
+          tamanho: file.size
         };
 
         const listAtualizada = [...activeProcesso.documentos, novoDoc];
@@ -269,7 +268,7 @@ export default function UserProcessPanel({ templates }: UserProcessPanelProps) {
         }
       }
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataURL(file);
   };
 
   const handleDragOver = (e: React.DragEvent, id: string) => {
