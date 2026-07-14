@@ -115,18 +115,39 @@ export const unificarDocumentos = async (
       
       // Se não temos bytes válidos em memória, tentamos buscar pela URL
       if (!docBytes) {
-        try {
-          const response = await fetch(doc.url);
-          if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
+        if (doc.url.startsWith('data:')) {
+          // Arquivo local em Base64 (Data URI)
+          // Em Vercel/Chrome, fazer fetch() de Data URIs muito grandes causa crash.
+          // Portanto, fazemos o decode manual do Base64, o que é 100% à prova de falhas.
+          try {
+            const base64Parts = doc.url.split(',');
+            const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
+            const binaryString = atob(base64Data);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            docBytes = bytes.buffer;
+          } catch (e) {
+            console.error('Erro fatal ao decodificar Base64:', e);
+            throw new Error('Falha ao decodificar o arquivo local. Tente enviar um arquivo menor ou recarregue a página.');
           }
-          docBytes = await response.arrayBuffer();
-        } catch (fetchErr) {
-          console.warn('Falha ao buscar doc.url:', fetchErr);
-          throw new Error(
-            'Arquivo indisponível na memória. Se você recarregou a página sem salvar na nuvem, ' +
-            'o arquivo temporário foi perdido. Por favor, remova este anexo e faça o upload novamente.'
-          );
+        } else {
+          // É uma URL externa (ex: Supabase Storage)
+          try {
+            const response = await fetch(doc.url);
+            if (!response.ok) {
+              throw new Error(`HTTP Error: ${response.status}`);
+            }
+            docBytes = await response.arrayBuffer();
+          } catch (fetchErr) {
+            console.warn('Falha de CORS ou rede ao buscar doc.url:', fetchErr);
+            throw new Error(
+              'O servidor de nuvem bloqueou o acesso ao arquivo (Possível erro de CORS no Supabase) ou arquivo não encontrado. ' +
+              'Remova o anexo e faça o upload novamente.'
+            );
+          }
         }
       }
       
