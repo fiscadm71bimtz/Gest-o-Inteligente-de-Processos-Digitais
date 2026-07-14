@@ -136,16 +136,44 @@ export const unificarDocumentos = async (
         } else {
           // É uma URL externa (ex: Supabase Storage)
           try {
-            const response = await fetch(doc.url);
-            if (!response.ok) {
-              throw new Error(`HTTP Error: ${response.status}`);
+            let fetched = false;
+            
+            // Se for uma URL do nosso bucket Supabase, usamos o SDK oficial para burlar o erro de CORS do fetch direto
+            if (doc.url.includes('documentos-brutos')) {
+              // A URL é do tipo: https://.../public/documentos-brutos/brutos/p-123/arquivo.pdf
+              // Extraímos tudo depois de 'documentos-brutos/'
+              const urlParts = doc.url.split('documentos-brutos/');
+              if (urlParts.length > 1) {
+                const filePath = decodeURIComponent(urlParts[1]);
+                
+                // Import dinâmico para não quebrar dependências circulares
+                const { supabase, isSupabaseConfigured } = await import('../supabaseClient');
+                
+                if (isSupabaseConfigured() && supabase) {
+                  const { data, error } = await supabase.storage.from('documentos-brutos').download(filePath);
+                  if (!error && data) {
+                    docBytes = await data.arrayBuffer();
+                    fetched = true;
+                  } else {
+                    console.warn('Erro ao baixar via SDK do Supabase:', error);
+                  }
+                }
+              }
             }
-            docBytes = await response.arrayBuffer();
+            
+            // Fallback se não for Supabase ou se o SDK falhar
+            if (!fetched) {
+              const response = await fetch(doc.url);
+              if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+              }
+              docBytes = await response.arrayBuffer();
+            }
           } catch (fetchErr) {
-            console.warn('Falha de CORS ou rede ao buscar doc.url:', fetchErr);
+            console.warn('Falha ao baixar arquivo da nuvem:', fetchErr);
             throw new Error(
-              'O servidor de nuvem bloqueou o acesso ao arquivo (Possível erro de CORS no Supabase) ou arquivo não encontrado. ' +
-              'Remova o anexo e faça o upload novamente.'
+              'O servidor de nuvem bloqueou o acesso ao arquivo (CORS) ou ele não existe mais. ' +
+              'Por favor, exclua o anexo e faça o upload novamente.'
             );
           }
         }
