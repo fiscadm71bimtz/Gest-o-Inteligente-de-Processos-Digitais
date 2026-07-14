@@ -92,9 +92,19 @@ export default function ConfigPanel({ configChancela, setConfigChancela }: Confi
           </div>
         </div>
 
-        {/* NOVA SEÇÃO: POSIÇÃO DA NUMERAÇÃO */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3">
-          <div className="space-y-1.5">
+        {/* NOVA SEÇÃO: SERVIDOR E POSIÇÃO DA NUMERAÇÃO */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-3">
+          <div className="md:col-span-7 space-y-1.5">
+            <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block ml-1">Nome do Servidor (Autenticador)</label>
+            <input
+              type="text"
+              value={configChancela.nomeServidor || ''}
+              onChange={(e) => setConfigChancela({ ...configChancela, nomeServidor: e.target.value })}
+              placeholder="Ex: 1º Sgt Gaudencio"
+              className="w-full text-xs px-4 py-3 bg-slate-50/50 border border-slate-200/80 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-bold text-slate-800 shadow-inner shadow-slate-100/50"
+            />
+          </div>
+          <div className="md:col-span-5 space-y-1.5">
             <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block ml-1">Posição da Numeração de Páginas</label>
             <select
               value={configChancela.posicaoPagina}

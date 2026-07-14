@@ -302,6 +302,7 @@ export const unificarDocumentos = async (
     
     // --- CHANCELAMENTO / RUBRICA VISUAL (GOV.BR STYLE) ---
     const textoChancela = config.texto.trim() || 'ASSINATURA DIGITAL';
+    const subTextoServidor = config.nomeServidor ? `Autenticado por: ${config.nomeServidor}` : '';
     const subTextoHash = `Autenticação: ${hashProcesso}`;
     
     const dataAtual = new Date().toLocaleDateString('pt-BR', {
@@ -314,11 +315,12 @@ export const unificarDocumentos = async (
     const tamanhoFonteSub = config.tamanhoFonte - 2;
 
     const larguraTextoPrincipal = fonteHelveticaBold.widthOfTextAtSize(textoChancela, tamanhoFonteTit);
+    const larguraSubTextoServidor = subTextoServidor ? fonteHelvetica.widthOfTextAtSize(subTextoServidor, tamanhoFonteSub) : 0;
     const larguraSubTextoHash = fonteHelvetica.widthOfTextAtSize(subTextoHash, tamanhoFonteSub);
     const larguraSubTextoData = fonteHelvetica.widthOfTextAtSize(subTextoData, tamanhoFonteSub);
     
     // Calcula largura e altura dinamicamente para não sobrepor
-    const maxTextoLargura = Math.max(larguraTextoPrincipal, larguraSubTextoHash, larguraSubTextoData);
+    const maxTextoLargura = Math.max(larguraTextoPrincipal, larguraSubTextoServidor, larguraSubTextoHash, larguraSubTextoData);
     const padding = 10;
     const raioCirculo = 14; // Aumentado levemente de 12 para 14 para caber o 71º BIMTz
     const espacamentoTexto = 10;
@@ -326,7 +328,7 @@ export const unificarDocumentos = async (
     
     // Layout: [Faixa 4px] + [padding 10] + [círculo 28px] + [espaço 10px] + [textos] + [padding 10]
     const larguraRetangulo = larguraFaixaLateral + padding + (raioCirculo * 2) + espacamentoTexto + maxTextoLargura + padding;
-    const alturaRetangulo = 42; 
+    const alturaRetangulo = subTextoServidor ? 52 : 42; 
     
     // Coordenadas baseadas na configuração
     let rx = 35;
@@ -409,19 +411,29 @@ export const unificarDocumentos = async (
     const textX = circleX + raioCirculo + espacamentoTexto;
     
     // Y base = ry (fundo do selo). As linhas são desenhadas da linha de base para cima.
-    // Linha 1 (Título) - Baseline a 28pts acima do fundo
+    // Linha 1 (Título) - Baseline
     page.drawText(textoChancela, {
       x: textX,
-      y: ry + 27, 
+      y: subTextoServidor ? ry + 37 : ry + 27, 
       size: tamanhoFonteTit,
       font: fonteHelveticaBold,
       color: rgb(0.15, 0.15, 0.15), // Escuro oficial
     });
+
+    if (subTextoServidor) {
+      page.drawText(subTextoServidor, {
+        x: textX,
+        y: ry + 26,
+        size: tamanhoFonteSub,
+        font: fonteHelvetica,
+        color: rgb(0.35, 0.35, 0.35),
+      });
+    }
     
     // Linha 2 (Autenticação Hash)
     page.drawText(subTextoHash, {
       x: textX,
-      y: ry + 16,
+      y: subTextoServidor ? ry + 16 : ry + 16,
       size: tamanhoFonteSub,
       font: fonteHelvetica,
       color: rgb(0.35, 0.35, 0.35),

@@ -46,8 +46,9 @@ export interface Processo {
 
 export interface RubricaConfig {
   texto: string;
-  posicao: 'bottom-right' | 'bottom-left' | 'bottom-center' | 'top-right' | 'top-left';
-  posicaoPagina: 'bottom-right' | 'bottom-left' | 'bottom-center' | 'top-right' | 'top-left';
+  nomeServidor?: string;
+  posicao: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'bottom-center';
+  posicaoPagina?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'bottom-center';
   cor: string; // Hexadecimal ou RGB
   incluirData: boolean;
   incluirPagina: boolean;
