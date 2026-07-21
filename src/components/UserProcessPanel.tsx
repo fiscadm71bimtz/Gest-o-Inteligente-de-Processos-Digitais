@@ -70,7 +70,7 @@ export default function UserProcessPanel({ templates, configChancela }: UserProc
                 requisitoId: d.requisito_id,
                 requisitoNome: d.requisito_nome || 'Documento',
                 nomeArquivo: d.nome_arquivo,
-                url: d.url_storage,
+                url: d.url_storage === 'armazenado-no-banco' ? `db-base64:${d.id}` : d.url_storage,
                 extensao: d.extensao,
                 dataUpload: new Date(d.created_at).toLocaleDateString('pt-BR'),
                 tamanho: d.tamanho,
