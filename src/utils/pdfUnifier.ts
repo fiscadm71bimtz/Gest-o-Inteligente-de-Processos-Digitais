@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { DocumentoAnexo, RubricaConfig } from '../types';
 
 /**
@@ -289,30 +289,6 @@ export const unificarDocumentos = async (
   for (let i = 0; i < totalPaginas; i++) {
     const page = paginas[i];
     const { width, height } = page.getSize();
-    
-    // --- MARCA D'ÁGUA CENTRAL ---
-    const textoMarcaAgua = config.texto.trim() || 'DOCUMENTO AUTENTICADO';
-    const tamanhoFonteMarcaAgua = 56;
-    const larguraMarcaAgua = fonteHelveticaBold.widthOfTextAtSize(textoMarcaAgua, tamanhoFonteMarcaAgua);
-    
-    const angle = 45;
-    const angleRad = (angle * Math.PI) / 180;
-    
-    const cx = width / 2;
-    const cy = height / 2;
-    
-    const xMarcaAgua = cx - (larguraMarcaAgua / 2) * Math.cos(angleRad) + (tamanhoFonteMarcaAgua / 3) * Math.sin(angleRad);
-    const yMarcaAgua = cy - (larguraMarcaAgua / 2) * Math.sin(angleRad) - (tamanhoFonteMarcaAgua / 3) * Math.cos(angleRad);
-    
-    page.drawText(textoMarcaAgua, {
-      x: xMarcaAgua,
-      y: yMarcaAgua,
-      size: tamanhoFonteMarcaAgua,
-      font: fonteHelveticaBold,
-      color: hexToPdfRgb(config.cor),
-      opacity: 0.15, // Marca d'água bem transparente para não prejudicar a leitura
-      rotate: degrees(angle),
-    });
     
     // --- LINHA DE RODAPÉ SEPARADORA ---
     // Desenha uma linha fina cinza 40 pontos acima do final da página
