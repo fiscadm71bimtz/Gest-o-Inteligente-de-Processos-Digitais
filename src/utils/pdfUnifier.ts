@@ -16,10 +16,23 @@ export const convertImageToJpegBuffer = (fileBlob: Blob): Promise<ArrayBuffer> =
     const img = new Image();
     
     img.onload = () => {
-      try {
+        // 300 DPI equivalente para A4 (aprox. 2480 x 3508)
+        const MAX_WIDTH = 2480;
+        const MAX_HEIGHT = 3508;
+        
+        let targetWidth = img.width;
+        let targetHeight = img.height;
+        
+        // Redimensiona se for maior que 300 DPI, mantendo a proporção
+        if (targetWidth > MAX_WIDTH || targetHeight > MAX_HEIGHT) {
+          const ratio = Math.min(MAX_WIDTH / targetWidth, MAX_HEIGHT / targetHeight);
+          targetWidth = Math.round(targetWidth * ratio);
+          targetHeight = Math.round(targetHeight * ratio);
+        }
+        
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
         
         const ctx = canvas.getContext('2d');
         if (!ctx) {
@@ -31,7 +44,8 @@ export const convertImageToJpegBuffer = (fileBlob: Blob): Promise<ArrayBuffer> =
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        ctx.drawImage(img, 0, 0);
+        // Desenha a imagem redimensionada (se necessário) com anti-aliasing
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
         
         canvas.toBlob((blob) => {
           if (!blob) {
@@ -48,7 +62,7 @@ export const convertImageToJpegBuffer = (fileBlob: Blob): Promise<ArrayBuffer> =
             }
           };
           reader.readAsArrayBuffer(blob);
-        }, 'image/jpeg', 0.92);
+        }, 'image/jpeg', 0.80); // Qualidade ajustada de 0.92 para 0.80 para manter o tamanho < 5MB sem perda perceptível a 300dpi
         
       } catch (error) {
         reject(error);
@@ -512,9 +526,10 @@ export const unificarDocumentos = async (
     }
   }
   
-  onProgress?.('Finalizando codificação do arquivo...', 90);
+  onProgress?.('Finalizando e comprimindo o arquivo final...', 90);
   
-  const pdfBytes = await pdfUnificado.save();
+  // Otimiza e comprime a estrutura do PDF (útil para diminuir o tamanho sem perda de qualidade)
+  const pdfBytes = await pdfUnificado.save({ useObjectStreams: true });
   
   onProgress?.('Processamento concluído com sucesso!', 100);
   
