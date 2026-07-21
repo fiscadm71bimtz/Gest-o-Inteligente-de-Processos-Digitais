@@ -202,6 +202,17 @@ export default function UserProcessPanel({ templates, configChancela }: UserProc
     const reader = new FileReader();
     reader.onload = async () => {
       if (typeof reader.result === 'string') {
+        
+        // Verifica se já existe um documento para este requisito (que não seja avulso)
+        const existingDocIndex = activeProcesso.documentos.findIndex(d => d.requisitoId === requisitoId && requisitoId !== '');
+        let oldDocId: string | null = null;
+        const listAtualizada = [...activeProcesso.documentos];
+        
+        if (existingDocIndex >= 0) {
+          oldDocId = listAtualizada[existingDocIndex].id;
+          listAtualizada.splice(existingDocIndex, 1); // Remove o antigo localmente
+        }
+        
         const novoDoc: DocumentoAnexo = {
           id: `doc-${Date.now()}`,
           requisitoId,
@@ -213,7 +224,7 @@ export default function UserProcessPanel({ templates, configChancela }: UserProc
           tamanho: file.size
         };
 
-        const listAtualizada = [...activeProcesso.documentos, novoDoc];
+        listAtualizada.push(novoDoc);
         const procAtualizado = { ...activeProcesso, documentos: listAtualizada };
         
         setActiveProcesso(procAtualizado);
@@ -225,6 +236,11 @@ export default function UserProcessPanel({ templates, configChancela }: UserProc
         // Upload para Supabase Banco de Dados se conectado (burlar CORS do Storage)
         if (isSupabaseConfigured() && supabase) {
           try {
+            // Se tinha um arquivo antigo, deletamos ele do banco
+            if (oldDocId) {
+              await supabase.from('documentos_anexados').delete().eq('id', oldDocId);
+            }
+            
             // Salvar no Banco de Dados (Postgres) ao invés do Storage
             const { error } = await supabase.from('documentos_anexados').insert({
               id: novoDoc.id,
@@ -351,9 +367,24 @@ export default function UserProcessPanel({ templates, configChancela }: UserProc
     setUnificandoStatus('Lendo e compilando documentos anexados...');
 
     try {
+      // Ordena os documentos com base na ordem dos requisitos no template
+      let docsParaUnificar = [...activeProcesso.documentos];
+      if (template) {
+        const orderMap = new Map<string, number>();
+        template.requisitos.forEach((req, index) => {
+          orderMap.set(req.id, index);
+        });
+        
+        docsParaUnificar.sort((a, b) => {
+          const indexA = orderMap.has(a.requisitoId) ? orderMap.get(a.requisitoId)! : 9999;
+          const indexB = orderMap.has(b.requisitoId) ? orderMap.get(b.requisitoId)! : 9999;
+          return indexA - indexB;
+        });
+      }
+
       // Executa o motor client-side pdfUnifier
       const { pdfBytes, totalPaginas } = await unificarDocumentos(
-        activeProcesso.documentos,
+        docsParaUnificar,
         configChancela,
         (status, prog) => {
           setUnificandoStatus(status);

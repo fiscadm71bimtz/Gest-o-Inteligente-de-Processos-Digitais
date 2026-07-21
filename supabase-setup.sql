@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS public.documentos_anexados (
   requisito_id TEXT, -- Pode ser nulo para documentos avulsos
   nome_arquivo TEXT NOT NULL,
   url_storage TEXT NOT NULL,
+  arquivo_base64 TEXT,
   extensao TEXT,
   tamanho BIGINT,
   created_at TIMESTAMPTZ DEFAULT NOW()

@@ -6,18 +6,19 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FileCheck2, Settings, Code, FileCode, CheckCircle2, 
-  HelpCircle, Sparkles, BookOpen, Layers, ShieldCheck, LogOut
+  HelpCircle, Sparkles, BookOpen, Layers, ShieldCheck, LogOut, History
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import AdminPanel from './components/AdminPanel';
 import UserProcessPanel from './components/UserProcessPanel';
 import ConfigPanel from './components/ConfigPanel';
 import LoginPanel from './components/LoginPanel';
+import HistoryPanel from './components/HistoryPanel';
 import { TipoProcesso, RubricaConfig } from './types';
 import { getLocalData, saveLocalData, supabase } from './supabaseClient';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'user' | 'admin' | 'config'>('user');
+  const [activeTab, setActiveTab] = useState<'user' | 'admin' | 'config' | 'history'>('user');
   const [templates, setTemplates] = useState<TipoProcesso[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [isLocalAuthBypassed, setIsLocalAuthBypassed] = useState(false);
@@ -144,6 +145,17 @@ export default function App() {
               <span>Configurações</span>
             </button>
             <button
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                activeTab === 'history'
+                  ? 'bg-white text-indigo-600 shadow-[0_2px_8px_-1px_rgba(0,0,0,0.06)] border border-slate-200/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/45'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Histórico</span>
+            </button>
+            <button
               onClick={() => setActiveTab('admin')}
               className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                 activeTab === 'admin'
@@ -177,6 +189,9 @@ export default function App() {
         </div>
         <div className={activeTab === 'config' ? 'block' : 'hidden'}>
           <ConfigPanel configChancela={configChancela} setConfigChancela={setConfigChancela} />
+        </div>
+        <div className={activeTab === 'history' ? 'block' : 'hidden'}>
+          <HistoryPanel />
         </div>
       </main>
 
